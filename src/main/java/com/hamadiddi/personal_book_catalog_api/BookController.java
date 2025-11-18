@@ -17,10 +17,20 @@ public class BookController {
     @Autowired
     private BookRepo bookRepo;
 
-//    @GetMapping("/")
-//    public List<Book> getBook() {
-//        return bookRepo.findAll();
-//    }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getAbook(@PathVariable Long id) {
+        Map<String, Object> resp = new HashMap<>();
+        Optional<Book> book = bookRepo.findById(id);
+        if (book.isEmpty()) {
+            resp.put("message", "The book with the id " + id + " is not available atm");
+            resp.put("status", "fail");
+            resp.put("data", null);
+            resp.put("code", 404);
+            return ResponseEntity.ok(resp);
+        }
+        return ResponseEntity.ok(book);
+    }
+
 
     @PostMapping("/book")
     public ResponseEntity<?> addBook(@RequestBody BookReqDto bookReqDto) {
