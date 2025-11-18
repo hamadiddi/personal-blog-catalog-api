@@ -57,4 +57,43 @@ public class BookController {
 
         return ResponseEntity.ok(resp);
     }
+
+    @GetMapping("/")
+    public ResponseEntity<?> getAllBooks() {
+        List<Book> books = bookRepo.findAll();
+        return ResponseEntity.ok(books);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateBook(@RequestBody BookReqDto bookReqDto, @PathVariable Long id) {
+        Optional<Book> book = bookRepo.findByNameAndId(bookReqDto.getName(), id);
+        Map<String, Object> resp = new HashMap<>();
+        if (book.isPresent()) {
+            resp.put("message", "The book name " + bookReqDto.getName() + " is already present");
+            resp.put("status", "fail");
+            resp.put("data", null);
+            resp.put("code", 409);
+            return ResponseEntity.ok(resp);
+        }
+        Optional<Book> book2 = bookRepo.findById(id);
+        if (book2.isEmpty()) {
+            resp.put("message", "The book with the id " + id + " does not exist");
+            resp.put("status", "fail");
+            resp.put("data", null);
+            resp.put("code", 404);
+            return ResponseEntity.ok(resp);
+        }
+        Book bookFinal = book2.get();
+        bookFinal.setName(bookReqDto.getName());
+        bookFinal.setAuthor(bookReqDto.getAuthor());
+        bookFinal.setGenre(bookReqDto.getGenre());
+
+        Book bookSaved = bookRepo.save(bookFinal);
+
+        resp.put("message", "The book is updated successfully");
+        resp.put("status", "success");
+        resp.put("data", bookSaved);
+        resp.put("code", 200);
+        return ResponseEntity.ok(resp);
+    }
 }
