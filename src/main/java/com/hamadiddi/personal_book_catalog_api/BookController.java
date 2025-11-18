@@ -1,7 +1,6 @@
 package com.hamadiddi.personal_book_catalog_api;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +33,7 @@ public class BookController {
 
     @PostMapping("/book")
     public ResponseEntity<?> addBook(@RequestBody BookReqDto bookReqDto) {
-        Optional<Book> bookOptional = bookRepo.findByName(bookReqDto.getName());
+        Optional<Book> bookOptional = bookRepo.findByNameIgnoreCase(bookReqDto.getName());
         Map<String, Object> resp = new HashMap<>();
 
         if (bookOptional.isPresent()) {
