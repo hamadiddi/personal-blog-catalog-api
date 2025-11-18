@@ -1,6 +1,7 @@
 package com.hamadiddi.personal_book_catalog_api;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,9 +34,11 @@ public class BookController {
 
     @PostMapping("/book")
     public ResponseEntity<?> addBook(@RequestBody BookReqDto bookReqDto) {
-        Optional<Book> bookOptional = bookRepo.findByNameIgnoreCase(bookReqDto.getName());
+
         Map<String, Object> resp = new HashMap<>();
 
+        // Step 1: Application-level validation (fast path)
+        Optional<Book> bookOptional = bookRepo.findByNameIgnoreCase(bookReqDto.getName());
         if (bookOptional.isPresent()) {
             resp.put("message", "The book " + bookReqDto.getName() + " is already present");
             resp.put("status", "fail");
@@ -43,19 +46,33 @@ public class BookController {
             resp.put("code", 409);
             return ResponseEntity.ok(resp);
         }
-        var book = Book.builder()
-                .name(bookReqDto.getName())
-                .author(bookReqDto.getAuthor())
-                .genre(bookReqDto.getGenre())
-                .build();
-        Book savedBook = bookRepo.save(book);
-        resp.put("message", "The book was added successfully");
-        resp.put("status", "success");
-        resp.put("data", savedBook);
-        resp.put("code", 200);
 
-        return ResponseEntity.ok(resp);
+        // Step 2: Attempt to persist - DB-level constraint enforces final check
+        try {
+            Book book = Book.builder()
+                    .name(bookReqDto.getName())
+                    .author(bookReqDto.getAuthor())
+                    .genre(bookReqDto.getGenre())
+                    .build();
+
+            Book savedBook = bookRepo.save(book);
+
+            resp.put("message", "The book was added successfully");
+            resp.put("status", "success");
+            resp.put("data", savedBook);
+            resp.put("code", 200);
+            return ResponseEntity.ok(resp);
+
+        } catch (DataIntegrityViolationException e) {
+            // Triggered by DB-level unique constraint (LOWER(name) UNIQUE)
+            resp.put("message", "The book " + bookReqDto.getName() + " is already present");
+            resp.put("status", "fail");
+            resp.put("data", null);
+            resp.put("code", 409);
+            return ResponseEntity.status(409).body(resp);
+        }
     }
+
 
     @GetMapping("/")
     public ResponseEntity<?> getAllBooks() {
