@@ -9,4 +9,5 @@ public interface BookRepo extends JpaRepository<Book, Long> {
     Optional<Book> findByNameIgnoreCase(String name);
 
     Optional<Book> findByNameAndId(String name, Long id);
+    Optional<Book> findByNameIgnoreCase(String name);
 }
